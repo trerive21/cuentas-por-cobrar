@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cuentas por cobrar</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f6f5f1;--card:#fff;--ink:#1d2320;--mut:#6b7570;--line:#e3e1d9;--acc:#1f6f54;--accbg:#e4f1ec;--red:#b3402a;--redbg:#f8e8e4}
+:root:not([data-theme="light"]){}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141a17;--card:#1d2420;--ink:#e8ede9;--mut:#93a09a;--line:#2d3731;--acc:#5fc19c;--accbg:#1f3a2f;--red:#f08a72;--redbg:#3a2420}}
+:root[data-theme="dark"]{--bg:#141a17;--card:#1d2420;--ink:#e8ede9;--mut:#93a09a;--line:#2d3731;--acc:#5fc19c;--accbg:#1f3a2f;--red:#f08a72;--redbg:#3a2420}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:16px}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+h1{font:700 22px Georgia,serif;margin:0}
+h2{font:600 16px Georgia,serif;margin:0 0 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:290px 1fr;gap:14px;align-items:start}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+input,textarea,select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+label{display:block;font-size:12px;color:var(--mut);margin:8px 0 3px}
+.row{display:flex;gap:8px}.row>*{flex:1;min-width:0}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:7px 12px}
+button.p{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+[data-theme="dark"] button.p{color:#0c1511}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) button.p{color:#0c1511}}
+button.x{border:none;background:none;color:var(--mut);padding:2px 6px;font-size:13px}
+button.x.arm{color:var(--red);font-weight:600}
+button:disabled{opacity:.45;cursor:not-allowed}
+.deb{display:flex;justify-content:space-between;gap:8px;padding:10px;border-radius:8px;cursor:pointer;border:1px solid transparent}
+.deb:hover{background:var(--bg)}.deb.on{background:var(--accbg);border-color:var(--acc)}
+.deb small{color:var(--mut)}
+.amt{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+.sums{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.sum{background:var(--bg);border-radius:10px;padding:10px}.sum small{color:var(--mut);display:block}.sum b{font-size:18px;font-variant-numeric:tabular-nums}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+td.d{white-space:normal;min-width:120px}
+th{font-size:12px;color:var(--mut);font-weight:600}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.neg{color:var(--acc)}.pos{color:var(--red)}
+.badge{font-size:11px;padding:2px 8px;border-radius:99px;background:var(--redbg);color:var(--red);margin-left:6px}
+.badge.ok{background:var(--accbg);color:var(--acc)}
+.loanhead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.empty{color:var(--mut);text-align:center;padding:30px 10px}
+details summary{cursor:pointer;color:var(--acc);font-weight:600;padding:4px 0}
+.foot{font-size:12px;color:var(--mut);margin-top:8px}
+/* Login */
+#loginScreen{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px}
+#loginScreen.hide{display:none}
+.loginBox{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:32px 28px;width:100%;max-width:340px;box-shadow:0 4px 24px rgba(0,0,0,.08)}
+.loginBox h2{text-align:center;font:700 20px Georgia,serif;margin:0 0 6px}
+.loginBox p{text-align:center;color:var(--mut);font-size:13px;margin:0 0 22px}
+.loginErr{color:var(--red);font-size:13px;text-align:center;margin-top:10px;min-height:18px}
+.loginLogo{text-align:center;font-size:40px;margin-bottom:12px}
+/* sync status */
+#syncbar{display:flex;align-items:center;gap:6px;font-size:12px;padding:5px 10px;border-radius:8px;background:var(--accbg);color:var(--acc);margin-bottom:10px}
+#syncbar.err{background:var(--redbg);color:var(--red)}
+#syncbar.hide{display:none}
+.dot{width:8px;height:8px;border-radius:50%;background:currentColor;flex-shrink:0}
+.dot.spin{animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+</style>
+</head>
+<body>
+<!-- Login Screen -->
+<div id="loginScreen">
+  <div class="loginBox">
+    <div class="loginLogo">💰</div>
+    <h2>Cuentas por cobrar</h2>
+    <p>Ingresa tus credenciales para continuar</p>
+    <label>Usuario</label><input id="lu" placeholder="Usuario" autocomplete="username">
+    <label>Contraseña</label><input id="lp" type="password" placeholder="Contraseña" autocomplete="current-password">
+    <button class="p" id="loginBtn" style="width:100%;margin-top:14px">Entrar</button>
+    <div class="loginErr" id="loginErr"></div>
+  </div>
+</div>
+
+<div class="wrap" id="mainApp" style="display:none">
+  <header>
+    <h1>💰 Cuentas por cobrar</h1>
+    <div class="row" style="flex:none;align-items:center">
+      <input id="cur" style="width:60px" title="Símbolo de moneda" value="$">
+      <button id="exp">Exportar respaldo</button>
+      <button id="imp">Importar respaldo</button>
+      <button id="logoutBtn" title="Cerrar sesión">Salir 🔒</button>
+      <input type="file" id="impFile" accept=".json" style="display:none">
+    </div>
+  </header>
+  <div id="syncbar" class="hide"><div class="dot spin"></div><span id="synctxt">Conectando…</span></div>
+  <div class="grid">
+    <div>
+      <div class="card">
+        <h2>Nuevo deudor</h2>
+        <label>Nombre</label><input id="nn" placeholder="Nombre del deudor">
+        <label>Teléfono (opcional)</label><input id="nt">
+        <label>Motivo del préstamo</label><textarea id="nd" rows="2" placeholder="Ej: compra de mercadería"></textarea>
+        <div class="row"><div><label>Monto inicial</label><input id="na" type="number" min="0" step="any"></div>
+        <div><label>Fecha</label><input id="nf" type="date"></div></div>
+        <button class="p" id="addDeb" style="width:100%;margin-top:12px">Crear deudor</button>
+      </div>
+      <div class="card"><h2>Deudores</h2><div id="list"></div></div>
+    </div>
+    <div id="detail"></div>
+  </div>
+  <div class="foot">Datos sincronizados con Firebase. Se actualizan en tiempo real en todos tus dispositivos.</div>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+// ── Helpers ───────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+
+// ── Login ─────────────────────────────────────────────────
+const CREDS = { user: 'Lrivera', pass: 'Trerive21' };
+const SESSION_KEY = 'cxc-auth';
+
+function checkSession() {
+  try { return sessionStorage.getItem(SESSION_KEY) === 'ok'; } catch(e) { return false; }
+}
+function doLogin() {
+  const u = $('lu').value.trim(), p = $('lp').value;
+  if (u === CREDS.user && p === CREDS.pass) {
+    try { sessionStorage.setItem(SESSION_KEY, 'ok'); } catch(e) {}
+    $('loginScreen').classList.add('hide');
+    $('mainApp').style.display = '';
+  } else {
+    $('loginErr').textContent = 'Usuario o contraseña incorrectos.';
+    $('lp').value = '';
+    $('lp').focus();
+  }
+}
+if (checkSession()) {
+  $('loginScreen').classList.add('hide');
+  $('mainApp').style.display = '';
+}
+$('loginBtn').onclick = doLogin;
+$('lp').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+$('lu').addEventListener('keydown', e => { if (e.key === 'Enter') $('lp').focus(); });
+
+// ── Firebase ──────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyBDybSDF9Gb2lqnSlx-X7apLKWUSpdl6GQ",
+  authDomain: "cuentas-por-cobrar-37fba.firebaseapp.com",
+  databaseURL: "https://cuentas-por-cobrar-37fba-default-rtdb.firebaseio.com",
+  projectId: "cuentas-por-cobrar-37fba",
+  storageBucket: "cuentas-por-cobrar-37fba.firebasestorage.app",
+  messagingSenderId: "447072949864",
+  appId: "1:447072949864:web:7eec1fcbd5e5d7ea3ccddd",
+  measurementId: "G-XYMD795SJC"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const dataRef = ref(db, 'cxc');
+
+// ── Estado local ──────────────────────────────────────────
+let S = { cur: '$', sel: null, debtors: [] };
+let saving = false;
+
+const today = () => new Date().toISOString().slice(0, 10);
+const uid = () => Math.random().toString(36).slice(2, 10);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const money = n => S.cur + ' ' + Number(n).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fdate = d => d ? d.split('-').reverse().join('/') : '';
+const paid = l => (l.payments || []).reduce((a, p) => a + (p.amount || 0), 0);
+const bal = l => (l.amount || 0) - paid(l);
+const dTotal = d => (d.loans || []).reduce((a, l) => a + bal(l), 0);
+
+// ── Sync bar ──────────────────────────────────────────────
+function syncMsg(txt, err = false) {
+  const bar = $('syncbar'), dot = bar.querySelector('.dot');
+  $('synctxt').textContent = txt;
+  bar.className = err ? 'err' : '';
+  dot.className = 'dot' + (txt.includes('…') ? ' spin' : '');
+  clearTimeout(bar._t);
+  if (!err && !txt.includes('…')) bar._t = setTimeout(() => bar.classList.add('hide'), 2500);
+}
+
+// ── Firebase: escuchar cambios en tiempo real ─────────────
+let ignoreUntil = 0;
+syncMsg('Conectando…');
+// Firebase convierte arrays a objetos, esta función los restaura
+function fixData(val) {
+  const data = Object.assign({ cur: '$', sel: null, debtors: [] }, val);
+  // Si debtors vino como objeto en vez de array, convertirlo
+  if (data.debtors && !Array.isArray(data.debtors)) {
+    data.debtors = Object.values(data.debtors);
+  }
+  data.debtors = (data.debtors || []).map(d => {
+    if (d.loans && !Array.isArray(d.loans)) d.loans = Object.values(d.loans);
+    d.loans = (d.loans || []).map(l => {
+      if (l.payments && !Array.isArray(l.payments)) l.payments = Object.values(l.payments);
+      l.payments = l.payments || [];
+      return l;
+    });
+    return d;
+  });
+  return data;
+}
+
+onValue(dataRef, snap => {
+  if (Date.now() < ignoreUntil) return;
+  const val = snap.val();
+  if (val) {
+    const sel = S.sel;
+    S = fixData(val);
+    S.sel = sel;
+  }
+  syncMsg('Sincronizado ✓');
+  render();
+}, err => {
+  syncMsg('Error de conexión — verifica las reglas de Firebase', true);
+});
+
+// ── Guardar en Firebase ───────────────────────────────────
+async function save() {
+  saving = true;
+  ignoreUntil = Date.now() + 5000; // ignorar onValue por 5 segundos
+  syncMsg('Guardando…');
+  try {
+    await set(dataRef, S);
+    syncMsg('Guardado ✓');
+  } catch (e) {
+    syncMsg('Error al guardar: ' + e.message, true);
+  }
+  saving = false;
+}
+
+// ── UI ────────────────────────────────────────────────────
+$('cur').value = S.cur;
+$('nf').value = today();
+$('cur').oninput = e => { S.cur = e.target.value; save(); render(); };
+
+$('addDeb').onclick = () => {
+  const name = $('nn').value.trim(), amount = parseFloat($('na').value);
+  if (!name || !(amount > 0)) { alert('Ingresa nombre y un monto mayor a 0.'); return; }
+  const d = { id: uid(), name, phone: $('nt').value.trim(), loans: [{ id: uid(), date: $('nf').value || today(), desc: $('nd').value.trim(), amount, payments: [] }] };
+  S.debtors.push(d); S.sel = d.id; save();
+  ['nn', 'nt', 'nd', 'na'].forEach(i => $(i).value = ''); render();
+};
+
+function arm(btn, fn) {
+  if (btn.classList.contains('arm')) { fn(); return; }
+  btn.classList.add('arm'); const t = btn.textContent; btn.textContent = '¿Seguro?';
+  setTimeout(() => { btn.classList.remove('arm'); btn.textContent = t; }, 2500);
+}
+
+window.selDeb = id => { S.sel = id; render(); };
+window.delDeb = (b, id) => arm(b, () => { S.debtors = S.debtors.filter(d => d.id !== id); S.sel = null; save(); render(); });
+window.delLoan = (b, did, lid) => arm(b, () => { const d = S.debtors.find(x => x.id === did); d.loans = d.loans.filter(l => l.id !== lid); save(); render(); });
+window.delPay = (b, did, lid, pid) => arm(b, () => { const l = S.debtors.find(x => x.id === did).loans.find(x => x.id === lid); l.payments = l.payments.filter(p => p.id !== pid); save(); render(); });
+
+window.addPay = (did, lid) => {
+  const l = S.debtors.find(x => x.id === did).loans.find(x => x.id === lid);
+  const a = parseFloat($('pa' + lid).value);
+  if (!(a > 0)) { alert('Ingresa un monto de abono válido.'); return; }
+  if (a > bal(l) + 0.001) { alert('El abono supera el saldo (' + money(bal(l)) + ').'); return; }
+  l.payments.push({ id: uid(), date: $('pf' + lid).value || today(), desc: $('pd' + lid).value.trim(), amount: a });
+  save(); render();
+};
+
+window.addLoan = did => {
+  const d = S.debtors.find(x => x.id === did);
+  const a = parseFloat($('la').value);
+  if (!(a > 0)) { alert('Ingresa el monto del nuevo préstamo.'); return; }
+  d.loans.push({ id: uid(), date: $('lf').value || today(), desc: $('ld').value.trim(), amount: a, payments: [] });
+  save(); render();
+};
+
+// ── Exportar / Importar respaldo ─────────────────────────
+$('logoutBtn').onclick = () => {
+  try { sessionStorage.removeItem(SESSION_KEY); } catch(e) {}
+  location.reload();
+};
+$('exp').onclick = () => {
+  const data = JSON.stringify(S, null, 2);
+  const a = document.createElement('a');
+  a.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(data);
+  a.download = 'respaldo-cuentas-por-cobrar.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+};
+$('imp').onclick = () => $('impFile').click();
+$('impFile').onchange = e => {
+  const file = e.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = async ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!data.debtors) throw new Error('Formato inválido');
+      if (!confirm('¿Cargar el respaldo? Esto reemplazará los datos en la nube.')) return;
+      S = Object.assign({ cur: '$', sel: null, debtors: [] }, data);
+      render();
+      await save();
+      alert('Respaldo importado y guardado en la nube correctamente.');
+    } catch (err) { alert('No se pudo leer el archivo.'); }
+    e.target.value = '';
+  };
+  r.readAsText(file);
+};
+
+// ── Render principal ──────────────────────────────────────
+function render() {
+  const L = $('list');
+  const tot = S.debtors.reduce((a, d) => a + dTotal(d), 0);
+  L.innerHTML = S.debtors.length
+    ? S.debtors.map(d => `<div class="deb ${d.id === S.sel ? 'on' : ''}" onclick="selDeb('${d.id}')"><div><b>${esc(d.name)}</b><br><small>${d.loans.length} préstamo(s)</small></div><div class="amt ${dTotal(d) > 0.001 ? 'pos' : 'neg'}">${money(dTotal(d))}</div></div>`).join('')
+      + `<div style="border-top:1px solid var(--line);margin-top:8px;padding-top:8px;display:flex;justify-content:space-between"><span>Total por cobrar</span><b class="amt">${money(tot)}</b></div>`
+    : '<div class="empty">Aún no hay deudores</div>';
+
+  const d = S.debtors.find(x => x.id === S.sel);
+  const D = $('detail');
+  if (!d) { D.innerHTML = '<div class="card empty">Crea o selecciona un deudor para ver su estado de cuenta.</div>'; return; }
+
+  const lent = d.loans.reduce((a, l) => a + l.amount, 0), pd = d.loans.reduce((a, l) => a + paid(l), 0);
+  const ev = [];
+  d.loans.forEach((l, i) => {
+    ev.push({ date: l.date, k: 0, t: 'Préstamo #' + (i + 1), desc: l.desc, c: l.amount, a: 0 });
+    l.payments.forEach(p => ev.push({ date: p.date, k: 1, t: 'Abono (préstamo #' + (i + 1) + ')', desc: p.desc, c: 0, a: p.amount }));
+  });
+  ev.sort((x, y) => x.date.localeCompare(y.date) || x.k - y.k);
+  let run = 0;
+  const led = ev.map(e => { run += e.c - e.a; return `<tr><td>${fdate(e.date)}</td><td>${e.t}</td><td class="d">${esc(e.desc)}</td><td class="n pos">${e.c ? money(e.c) : ''}</td><td class="n neg">${e.a ? money(e.a) : ''}</td><td class="n"><b>${money(run)}</b></td></tr>`; }).join('');
+
+  const loans = d.loans.map((l, i) => {
+    let r = l.amount;
+    const rows = l.payments.slice().sort((a, b) => a.date.localeCompare(b.date)).map(p => { r -= p.amount; return `<tr><td>${fdate(p.date)}</td><td class="d">${esc(p.desc) || 'Abono'}</td><td class="n neg">− ${money(p.amount)}</td><td class="n"><b>${money(r)}</b></td><td><button class="x" onclick="delPay(this,'${d.id}','${l.id}','${p.id}')">Borrar</button></td></tr>`; }).join('');
+    const open = bal(l) > 0.001;
+    return `<div class="card"><div class="loanhead"><div><b>Préstamo #${i + 1}</b> · ${fdate(l.date)}<span class="badge ${open ? '' : 'ok'}">${open ? 'Pendiente' : 'Pagado'}</span><br><small style="color:var(--mut)">${esc(l.desc) || 'Sin descripción'}</small></div><button class="x" onclick="delLoan(this,'${d.id}','${l.id}')">Eliminar préstamo</button></div>
+    <div class="tw"><table><tr><th>Fecha</th><th>Descripción</th><th class="n">Abono</th><th class="n">Saldo</th><th></th></tr>
+    <tr><td>${fdate(l.date)}</td><td>Monto inicial</td><td></td><td class="n"><b>${money(l.amount)}</b></td><td></td></tr>${rows}</table></div>
+    ${open ? `<div class="row" style="margin-top:8px;align-items:end"><div style="flex:1.2"><label>Monto del abono</label><input id="pa${l.id}" type="number" min="0" step="any"></div><div><label>Fecha</label><input id="pf${l.id}" type="date" value="${today()}"></div><div style="flex:1.6"><label>Descripción</label><input id="pd${l.id}" placeholder="Opcional"></div><div style="flex:none"><button class="p" onclick="addPay('${d.id}','${l.id}')">Abonar</button></div></div>` : ''}</div>`;
+  }).join('');
+
+  D.innerHTML = `<div class="card"><div class="loanhead"><div><h2 style="margin:0">${esc(d.name)}</h2><small style="color:var(--mut)">${esc(d.phone)}</small></div><div><button class="p" onclick="openStmt('${d.id}')">Generar estado de cuenta</button> <button class="x" onclick="delDeb(this,'${d.id}')">Eliminar deudor</button></div></div>
+  <div class="sums"><div class="sum"><small>Total prestado</small><b>${money(lent)}</b></div><div class="sum"><small>Total abonado</small><b class="neg">${money(pd)}</b></div><div class="sum"><small>Saldo total</small><b class="${dTotal(d) > 0.001 ? 'pos' : 'neg'}">${money(dTotal(d))}</b></div></div>
+  <details><summary>+ Agregar nuevo préstamo</summary>
+  <label>Descripción / motivo</label><input id="ld" placeholder="Motivo del nuevo préstamo">
+  <div class="row"><div><label>Monto</label><input id="la" type="number" min="0" step="any"></div><div><label>Fecha</label><input id="lf" type="date" value="${today()}"></div></div>
+  <button class="p" style="margin-top:10px" onclick="addLoan('${d.id}')">Agregar préstamo</button></details></div>
+  ${loans}
+  <div class="card"><h2>Estado de cuenta general</h2><div class="tw"><table><tr><th>Fecha</th><th>Movimiento</th><th>Descripción</th><th class="n">Deuda</th><th class="n">Abono</th><th class="n">Saldo total</th></tr>${led}</table></div></div>`;
+}
+
+// ── Estado de cuenta ─────────────────────────────────────
+const PSTYLE = `.paper{background:#fff;color:#1d2320;font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;max-width:760px;margin:0 auto;padding:28px}
+.paper h1{font:700 24px Georgia,serif;margin:0}.paper .top{display:flex;justify-content:space-between;gap:16px;border-bottom:2px solid #1f6f54;padding-bottom:12px;margin-bottom:14px}
+.paper .meta{font-size:13px;color:#555;text-align:right}.paper h3{font:600 15px Georgia,serif;margin:18px 0 6px}
+.paper table{width:100%;border-collapse:collapse;font-size:13px}.paper th,.paper td{padding:6px 7px;border-bottom:1px solid #e3e1d9;text-align:left}
+.paper th{font-size:11px;color:#666;text-transform:uppercase}.paper .n{text-align:right;font-variant-numeric:tabular-nums}
+.paper .due{margin-top:18px;background:#e4f1ec;border-radius:10px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;font-size:16px}
+.paper .due b{font-size:24px;color:#1f6f54}.paper .due.owe b{color:#b3402a}.paper .note{font-size:12px;color:#777;margin-top:14px}`;
+const st = document.createElement('style');
+st.textContent = PSTYLE + `
+#stmt{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.55);overflow:auto;display:none;padding:calc(12px + env(safe-area-inset-top,0px)) 12px calc(12px + env(safe-area-inset-bottom,0px))}
+#stmt.on{display:block}.bar{max-width:760px;margin:0 auto 10px;display:flex;gap:8px;flex-wrap:wrap}.bar input{flex:1;min-width:160px}
+@media print{body>.wrap{display:none}#stmt{position:static;background:#fff;padding:0;overflow:visible}.bar{display:none}.paper{padding:0}}`;
+document.head.appendChild(st);
+const stmtEl = document.createElement('div'); stmtEl.id = 'stmt';
+stmtEl.innerHTML = `<div class="bar"><input id="biz" placeholder="Tu nombre o negocio"><button class="p" id="sPrint">Imprimir / PDF</button><button id="sDl">Descargar</button><button id="sCopy">Copiar texto</button><button id="sClose">Cerrar</button></div><div class="paper" id="paper"></div>`;
+document.body.appendChild(stmtEl);
+let sd = null;
+
+function evOf(d) {
+  const ev = [];
+  d.loans.forEach((l, i) => {
+    ev.push({ date: l.date, k: 0, t: 'Préstamo #' + (i + 1), desc: l.desc, c: l.amount, a: 0 });
+    l.payments.forEach(p => ev.push({ date: p.date, k: 1, t: 'Abono préstamo #' + (i + 1), desc: p.desc, c: 0, a: p.amount }));
+  });
+  ev.sort((x, y) => x.date.localeCompare(y.date) || x.k - y.k);
+  let r = 0; ev.forEach(e => { r += e.c - e.a; e.s = r; }); return ev;
+}
+function paperHTML(d) {
+  const ev = evOf(d), t = dTotal(d);
+  const sum = d.loans.map((l, i) => `<tr><td>#${i + 1}</td><td>${fdate(l.date)}</td><td>${esc(l.desc) || '—'}</td><td class="n">${money(l.amount)}</td><td class="n">${money(paid(l))}</td><td class="n"><b>${money(bal(l))}</b></td></tr>`).join('');
+  const mov = ev.map(e => `<tr><td>${fdate(e.date)}</td><td>${e.t}${e.desc ? ' · ' + esc(e.desc) : ''}</td><td class="n">${e.c ? money(e.c) : ''}</td><td class="n">${e.a ? money(e.a) : ''}</td><td class="n">${money(e.s)}</td></tr>`).join('');
+  const biz = esc($('biz').value.trim());
+  return `<div class="top"><div><h1>Estado de cuenta</h1><div>${biz || ''}</div></div><div class="meta">Cliente: <b>${esc(d.name)}</b><br>Fecha de emisión: ${fdate(today())}</div></div>
+  <h3>Resumen por préstamo</h3><table><tr><th>#</th><th>Fecha</th><th>Motivo</th><th class="n">Monto</th><th class="n">Abonado</th><th class="n">Saldo</th></tr>${sum}</table>
+  <h3>Detalle de movimientos</h3><table><tr><th>Fecha</th><th>Concepto</th><th class="n">Deuda</th><th class="n">Abono</th><th class="n">Saldo</th></tr>${mov}</table>
+  <div class="due ${t > 0.001 ? 'owe' : 'zero'}"><span>${t > 0.001 ? 'Saldo pendiente a pagar' : 'Cuenta al día ✓'}</span><b>${money(t)}</b></div>`;
+}
+function textOf(d) {
+  const ev = evOf(d), t = dTotal(d), biz = $('biz').value.trim();
+  return [`ESTADO DE CUENTA${biz ? ' - ' + biz : ''}`, `Cliente: ${d.name}`, `Fecha: ${fdate(today())}`, '',
+    ...ev.map(e => `${fdate(e.date)} | ${e.t}${e.desc ? ' (' + e.desc + ')' : ''} | ${e.c ? '+' + money(e.c) : '-' + money(e.a)} | Saldo: ${money(e.s)}`), '',
+    `SALDO PENDIENTE: ${money(t)}`].join('\n');
+}
+window.openStmt = id => {
+  sd = S.debtors.find(x => x.id === id);
+  try { $('biz').value = localStorage.getItem('cxc-biz') || ''; } catch (e) { }
+  $('paper').innerHTML = paperHTML(sd); stmtEl.classList.add('on'); stmtEl.scrollTop = 0;
+};
+$('biz').oninput = () => { try { localStorage.setItem('cxc-biz', $('biz').value); } catch (e) { } $('paper').innerHTML = paperHTML(sd); };
+$('sClose').onclick = () => stmtEl.classList.remove('on');
+$('sPrint').onclick = () => { try { window.print(); } catch (e) { alert('Usa Descargar y luego imprime desde tu navegador.'); } };
+$('sDl').onclick = () => {
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Estado de cuenta - ${esc(sd.name)}</title><style>body{margin:0;background:#f6f5f1}${PSTYLE}@media print{body{background:#fff}.paper{padding:0}}</style></head><body><div class="paper">${paperHTML(sd)}</div></body></html>`;
+  const a = document.createElement('a');
+  a.href = 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
+  a.download = 'estado-de-cuenta-' + sd.name.replace(/[^\w]+/g, '-') + '.html';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+};
+$('sCopy').onclick = async () => {
+  const t = textOf(sd);
+  try { await navigator.clipboard.writeText(t); $('sCopy').textContent = '¡Copiado!'; } catch (e) { window.prompt('Copia el texto:', t); }
+  setTimeout(() => $('sCopy').textContent = 'Copiar texto', 1800);
+};
+
+render();
+</script>
+</body>
+</html>
